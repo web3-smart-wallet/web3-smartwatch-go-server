@@ -1,0 +1,59 @@
+name: Release Build
+
+on:
+  release:
+    types: [created]
+  push:
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            arch: amd64
+            extension: .exe
+            goos: windows
+            goarch: amd64
+          - os: darwin
+            arch: amd64
+            extension: ""
+            goos: darwin
+            goarch: amd64
+          - os: darwin
+            arch: arm64
+            extension: ""
+            goos: darwin
+            goarch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          go build -v -o smart-contract-cli${{ matrix.extension }} main.go
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./smart-contract-cli${{ matrix.extension }}
+          asset_name: smart-contract-cli-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.extension }}
+          asset_content_type: application/octet-stream
