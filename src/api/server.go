@@ -2,13 +2,17 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/web3-smart-wallet/src/services"
 )
 
 type Server struct {
+	nftService services.NftServiceInterface
 }
 
-func NewServer() ServerInterface {
-	return &Server{}
+func NewServer(nftService services.NftServiceInterface) ServerInterface {
+	return &Server{
+		nftService: nftService,
+	}
 }
 
 func (s Server) GetApiSearchAddressAddress(c *fiber.Ctx, address string) error {
