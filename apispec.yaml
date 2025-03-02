@@ -251,6 +251,12 @@ paths:
 
 components:
   schemas:
+    TokenType:
+      type: string
+      enum: [ERC20, STABLE]
+      description: Type of the token
+      example: "ERC20"
+
     Token:
       type: object
       required:
@@ -262,28 +268,20 @@ components:
         address:
           type: string
           description: Token contract address
-          example: "0xdac17f958d2ee523a2206206994597c13d831ec7"
         symbol:
           type: string
           description: Token symbol
-          example: "USDT"
         name:
           type: string
           description: Token name
-          example: "Tether USD"
         decimals:
           type: integer
-          description: Number of decimal places
-          example: 6
-        description:
-          type: string
-          description: Token description (if available)
-          example: "Tether gives you the joint benefits of open blockchain technology and traditional currency"
+          description: Token decimals
         type:
+          $ref: '#/components/schemas/TokenType'
+        balance:
           type: string
-          enum: [ERC20, STABLE]
-          description: Token type
-          example: "STABLE"
+          description: Token balance in hex string format
 
     TokenBalance:
       type: object
