@@ -112,7 +112,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/user/{address}/NFTs:
+  /api/user/{address}/nfts:
     get:
       tags:
         - User
@@ -130,23 +130,18 @@ paths:
             type: string
             pattern: '^0x[a-fA-F0-9]{40}$'
           example: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+        - name: include_metadata
+          in: query
+          schema:
+            type: boolean
         - name: page
           in: query
-          required: false
-          description: Page number (starts from 1)
           schema:
             type: integer
-            minimum: 1
-            default: 1
-        - name: pageSize
+        - name: items_per_page
           in: query
-          required: false
-          description: Number of items per page
           schema:
             type: integer
-            minimum: 1
-            maximum: 100
-            default: 10
       responses:
         '200':
           description: Successful operation

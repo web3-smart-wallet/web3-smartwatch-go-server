@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/web3-smart-wallet/src/api"
 	"github.com/web3-smart-wallet/src/services"
-	"github.com/web3-smart-wallet/src/utils"
 )
 
 // 添加地址验证正则表达式
@@ -14,11 +13,13 @@ var addressRegex = regexp.MustCompile("^0x[a-fA-F0-9]{40}$")
 
 type Server struct {
 	ankrService services.AnkrServiceInterface
+	nftService  services.NFTServiceInterface
 }
 
-func NewServer(ankrService services.AnkrServiceInterface) api.ServerInterface {
+func NewServer(ankrService services.AnkrServiceInterface, nftService services.NFTServiceInterface) api.ServerInterface {
 	return &Server{
 		ankrService: ankrService,
+		nftService:  nftService,
 	}
 }
 
@@ -41,7 +42,8 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 		})
 	}
 
-	tokens, err := s.ankrService.GetTokens(address, params.IncludeZeroBalance != nil && *params.IncludeZeroBalance)
+	// 调用服务获取代币列表
+	tokens, err := s.ankrService.GetTokenList(address)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Error{
 			Code:    "internal_server_error",
@@ -49,35 +51,14 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 		})
 	}
 
-	// 转换为 TokenBalance 数组
-	balances := make([]api.TokenBalance, len(tokens))
-	for i, token := range tokens {
-		var rawBalance string
-		var formattedBalance string
-		if token.Balance != nil {
-			rawBalance = *token.Balance
-			formattedBalance = utils.FormatTokenBalance(rawBalance, token.Decimals)
-		}
-		balances[i] = api.TokenBalance{
-			Token:            token,
-			RawBalance:       rawBalance,
-			FormattedBalance: &formattedBalance,
-		}
-	}
-
+	// 返回响应
 	return c.JSON(fiber.Map{
-		"address":  address,
-		"balances": balances,
-		"pagination": map[string]interface{}{
-			"current_page":   1,
-			"total_pages":    1,
-			"total_items":    len(balances),
-			"items_per_page": len(balances),
-		},
+		"address": address,
+		"tokens":  tokens,
 	})
 }
 
-func (s Server) GetApiUserAddressNFTs(c *fiber.Ctx, address string, params api.GetApiUserAddressNFTsParams) error {
+func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.GetApiUserAddressNftsParams) error {
 	//TODO implement me
 	panic("implement me")
 }

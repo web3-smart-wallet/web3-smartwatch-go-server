@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -39,8 +41,10 @@ func main() {
 	// 添加 CORS 中间件
 	app.Use(cors.New())
 
-	ankrService := services.NewAnkrService()
-	server := server.NewServer(ankrService)
+	ankrURL := fmt.Sprintf("https://rpc.ankr.com/multichain/%s", os.Getenv("ANKR_API_KEY"))
+	ankrService := services.NewAnkrService(ankrURL)
+	nftService := services.NewNFTService()
+	server := server.NewServer(ankrService, nftService)
 
 	api.RegisterHandlers(app, server)
 	log.Fatal(app.Listen(":8080"))

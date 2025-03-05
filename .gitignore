@@ -1,2 +1,4 @@
 gen.go
 .idea
+.env
+.DS_Store
