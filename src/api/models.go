@@ -2,20 +2,27 @@ package api
 
 // NFT 相关结构
 type NFTMetadata struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	Attributes  []struct {
-		TraitType string      `json:"trait_type"`
-		Value     interface{} `json:"value"`
-	} `json:"attributes,omitempty"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Image       string      `json:"image"`
+	Attributes  []Attribute `json:"attributes"`
 }
 
 type NFT struct {
-	TokenAddress string       `json:"token_address"`
-	TokenId      string       `json:"token_id"`
-	Type         string       `json:"type"` // ERC721 or ERC1155
-	Metadata     *NFTMetadata `json:"metadata,omitempty"`
+	ContractAddress string      `json:"contractAddress"`
+	TokenId         string      `json:"tokenId"`
+	Type            string      `json:"type"` // ERC721 or ERC1155
+	Name            string      `json:"name,omitempty"`
+	Description     string      `json:"description,omitempty"`
+	Image           string      `json:"image,omitempty"`
+	Attributes      []Attribute `json:"attributes,omitempty"`
+	Collection      string      `json:"collection,omitempty"`
+	TokenUri        string      `json:"tokenUri,omitempty"`
+}
+
+type Attribute struct {
+	TraitType string      `json:"trait_type"`
+	Value     interface{} `json:"value"`
 }
 
 type GetApiUserAddressNFTsResponse struct {
