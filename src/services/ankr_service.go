@@ -24,27 +24,6 @@ func NewAnkrService(apiURL string) AnkrServiceInterface {
 	}
 }
 
-// 定义已知的代币列表
-var knownTokens = []struct {
-	Address  string
-	Symbol   string
-	Name     string
-	Decimals int
-}{
-	{
-		Address:  "0x4200000000000000000000000000000000000006",
-		Symbol:   "WETH",
-		Name:     "Wrapped Ether",
-		Decimals: 18,
-	},
-	{
-		Address:  "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",
-		Symbol:   "USDbC",
-		Name:     "USD Base Coin",
-		Decimals: 6,
-	},
-}
-
 func (s *AnkrService) GetTokens(address string, includeZeroBalance bool) ([]api.Token, error) {
 	// 构建请求体
 	payload := map[string]interface{}{

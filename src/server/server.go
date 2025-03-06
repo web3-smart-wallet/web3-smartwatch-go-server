@@ -62,6 +62,14 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 }
 
 func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.GetApiUserAddressNftsParams) error {
+	// 记录完整的请求头
+	fmt.Println("请求头信息:")
+	headers := make(map[string]string)
+	c.Request().Header.VisitAll(func(key, value []byte) {
+		fmt.Printf("%s: %s\n", string(key), string(value))
+		headers[string(key)] = string(value)
+	})
+
 	// 验证地址格式
 	if !addressRegex.MatchString(address) {
 		return c.Status(fiber.StatusBadRequest).JSON(api.Error{
@@ -72,15 +80,18 @@ func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.G
 
 	fmt.Printf("Fetching NFTs for address: %s\n", address)
 
+	// 获取 pageToken 参数
+	pageToken := c.Query("pageToken", "")
+
 	// 获取NFT列表
 	includeMetadata := true
 	if params.IncludeMetadata != nil {
 		includeMetadata = *params.IncludeMetadata
 	}
 
-	fmt.Printf("Include metadata: %v\n", includeMetadata)
+	fmt.Printf("Include metadata: %v, PageToken: %s\n", includeMetadata, pageToken)
 
-	nfts, err := s.nftService.GetNFTs(address, includeMetadata)
+	nfts, nextPageToken, err := s.nftService.GetNFTs(address, includeMetadata, pageToken)
 	if err != nil {
 		fmt.Printf("Error fetching NFTs: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Error{
@@ -91,10 +102,25 @@ func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.G
 
 	fmt.Printf("Found %d NFTs for address %s\n", len(nfts), address)
 
+	// 构建下一页的完整URL
+	var nextPageUrl string
+	if nextPageToken != "" {
+		// 获取当前请求的基本URL
+		baseUrl := fmt.Sprintf("%s://%s%s", c.Protocol(), c.Hostname(), c.Path())
+		nextPageUrl = fmt.Sprintf("%s?pageToken=%s", baseUrl, nextPageToken)
+
+		// 如果有includeMetadata参数，也添加到URL中
+		if params.IncludeMetadata != nil {
+			nextPageUrl = fmt.Sprintf("%s&includeMetadata=%t", nextPageUrl, *params.IncludeMetadata)
+		}
+	}
+
 	// 返回响应
 	return c.JSON(fiber.Map{
-		"address": address,
-		"nfts":    nfts,
+		"address":       address,
+		"nfts":          nfts,
+		"nextPageToken": nextPageToken,
+		"nextPageUrl":   nextPageUrl,
 	})
 }
 

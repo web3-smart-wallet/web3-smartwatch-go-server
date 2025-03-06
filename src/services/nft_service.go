@@ -17,7 +17,7 @@ type NFTService struct {
 }
 
 type NFTServiceInterface interface {
-	GetNFTs(address string, includeMetadata bool) ([]api.NFT, error)
+	GetNFTs(address string, includeMetadata bool, pageToken string) ([]api.NFT, string, error)
 }
 
 func NewNFTService() NFTServiceInterface {
@@ -31,23 +31,30 @@ func NewNFTService() NFTServiceInterface {
 	}
 }
 
-func (s *NFTService) GetNFTs(address string, includeMetadata bool) ([]api.NFT, error) {
+func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken string) ([]api.NFT, string, error) {
 	// 构建请求体
+	params := map[string]interface{}{
+		"blockchain":      "base",
+		"walletAddress":   address,
+		"includeMetadata": includeMetadata,
+	}
+
+	// 如果有 pageToken，添加到请求参数中
+	if pageToken != "" {
+		params["pageToken"] = pageToken
+	}
+
 	payload := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"method":  "ankr_getNFTsByOwner",
-		"params": map[string]interface{}{
-			"blockchain":      "base",
-			"walletAddress":   address,
-			"includeMetadata": includeMetadata,
-		},
-		"id": 1,
+		"params":  params,
+		"id":      1,
 	}
 
 	// 发送请求
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %v", err)
+		return nil, "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
 	fmt.Printf("Sending request to %s with payload: %s\n", s.apiURL, string(jsonData))
@@ -57,20 +64,20 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool) ([]api.NFT, e
 	}
 	req, err := http.NewRequest("POST", s.apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return nil, "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch NFTs: %v", err)
+		return nil, "", fmt.Errorf("failed to fetch NFTs: %v", err)
 	}
 	defer resp.Body.Close()
 
 	// 读取响应体
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %v", err)
+		return nil, "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	fmt.Printf("Response from Ankr API: %s\n", string(respBody))
@@ -107,11 +114,11 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool) ([]api.NFT, e
 	}
 
 	if err := json.Unmarshal(respBody, &response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+		return nil, "", fmt.Errorf("failed to decode response: %v", err)
 	}
 
 	if response.Error != nil && response.Error.Message != "" {
-		return nil, fmt.Errorf("ankr api error: %s", response.Error.Message)
+		return nil, "", fmt.Errorf("ankr api error: %s", response.Error.Message)
 	}
 
 	// 处理NFT数据
@@ -149,5 +156,5 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool) ([]api.NFT, e
 	}
 
 	fmt.Printf("Returning %d NFTs for address %s\n", len(nfts), address)
-	return nfts, nil
+	return nfts, response.Result.NextPageToken, nil
 }

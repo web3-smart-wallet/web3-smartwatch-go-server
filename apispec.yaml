@@ -119,8 +119,8 @@ paths:
       summary: Get user's NFT assets
       description: |
         Retrieves all NFT assets associated with a user's wallet address.
-        Results are paginated with a default of 10 items per page starting from page 1.
         Supports both ERC721 and ERC1155 tokens.
+        Results are paginated and include a nextPageToken and nextPageUrl for fetching the next page.
       parameters:
         - name: address
           in: path
@@ -132,23 +132,39 @@ paths:
           example: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
         - name: include_metadata
           in: query
+          description: Whether to include metadata for NFTs
           schema:
             type: boolean
-        - name: page
+            default: true
+        - name: pageToken
           in: query
+          description: Token for pagination, obtained from nextPageToken in previous response
           schema:
-            type: integer
-        - name: items_per_page
-          in: query
-          schema:
-            type: integer
+            type: string
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedNFTResult'
+                type: object
+                properties:
+                  address:
+                    type: string
+                    description: User's ethereum address
+                    example: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+                  nfts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NFT'
+                  nextPageToken:
+                    type: string
+                    description: Token for fetching the next page of results
+                    example: "eyJiYXNlIjp7InRva2VuIjoiOFY2RXlCdzNINXlOV0pyVTFpUnRVcWRQWjdDaXg1c3RoUVUyRndkVmE4dERHVlhMZGlaaTRiekxuczZuYnNIUlpvSHl3aUxhQUZSIiwib2Zmc2V0IjowLCJuZXh0VG9rZW4iOiIiLCJuZXh0VG9rZW5JbmRleCI6MH19"
+                  nextPageUrl:
+                    type: string
+                    description: Complete URL for fetching the next page of results
+                    example: "http://localhost:8080/api/user/0x742d35Cc6634C0532925a3b844Bc454e4438f44e/nfts?pageToken=eyJiYXNlIjp7InRva2VuIjoiOFY2RXlCdzNINXlOV0pyVTFpUnRVcWRQWjdDaXg1c3RoUVUyRndkVmE4dERHVlhMZGlaaTRiekxuczZuYnNIUlpvSHl3aUxhQUZSIiwib2Zmc2V0IjowLCJuZXh0VG9rZW4iOiIiLCJuZXh0VG9rZW5JbmRleCI6MH19&includeMetadata=true"
         '400':
           $ref: '#/components/responses/BadRequest'
         '429':
@@ -335,6 +351,60 @@ components:
         details:
           type: object
           additionalProperties: true
+
+    NFTTrait:
+      type: object
+      properties:
+        trait_type:
+          type: string
+          description: The type of the trait
+          example: "Website"
+        value:
+          type: string
+          description: The value of the trait
+          example: "https://example.com"
+
+    NFT:
+      type: object
+      properties:
+        contractAddress:
+          type: string
+          description: The address of the NFT contract
+          example: "0x2867a6dfb2c15f789c3bf0b5547ac4117850a060"
+        tokenId:
+          type: string
+          description: The token ID of the NFT
+          example: "1"
+        type:
+          type: string
+          description: The type of the NFT contract (ERC721 or ERC1155)
+          enum: [ERC721, ERC1155]
+          example: "ERC1155"
+        name:
+          type: string
+          description: The name of the NFT
+          example: "Popo-frog"
+        description:
+          type: string
+          description: The description of the NFT
+          example: ""
+        image:
+          type: string
+          description: The URL to the token's image
+          example: "https://ipfs.io/ipfs/QmdpLjiLMy8Y7DHxDXDnEq7unwtS5GKk8ALvSR6DbvwBBj"
+        attributes:
+          type: array
+          description: The traits/attributes of the NFT
+          items:
+            $ref: '#/components/schemas/NFTTrait'
+        collection:
+          type: string
+          description: The name of the collection the NFT belongs to
+          example: "Popo-frog"
+        tokenUri:
+          type: string
+          description: The URL to the token's metadata
+          example: "https://ipfs.io/ipfs/QmUCEt63cPP668TkPQZFCGpyx1oTJxfhjV4pZ54v6kVZNd"
 
     NFTAsset:
       type: object
