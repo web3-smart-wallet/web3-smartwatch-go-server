@@ -8,7 +8,7 @@ type NFTMetadata struct {
 	Attributes  []Attribute `json:"attributes"`
 }
 
-type NFT struct {
+type CustomNFT struct {
 	ContractAddress string      `json:"contractAddress"`
 	TokenId         string      `json:"tokenId"`
 	Type            string      `json:"type"` // ERC721 or ERC1155
@@ -25,8 +25,15 @@ type Attribute struct {
 	Value     interface{} `json:"value"`
 }
 
+type CustomPagination struct {
+	CurrentPage  int `json:"current_page"`
+	TotalPages   int `json:"total_pages"`
+	TotalItems   int `json:"total_items"`
+	ItemsPerPage int `json:"items_per_page"`
+}
+
 type GetApiUserAddressNFTsResponse struct {
-	Address    string     `json:"address"`
-	NFTs       []NFT      `json:"nfts"`
-	Pagination Pagination `json:"pagination"`
+	Address    string           `json:"address"`
+	NFTs       []CustomNFT      `json:"nfts"`
+	Pagination CustomPagination `json:"pagination"`
 }

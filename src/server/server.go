@@ -45,8 +45,12 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 		})
 	}
 
+	// 获取分页参数
+	pageToken := c.Query("pageToken", "")
+	pageSize := 10 // 默认每页10个
+
 	// 调用服务获取代币列表
-	tokens, err := s.ankrService.GetTokenList(address)
+	tokens, nextPageToken, err := s.ankrService.GetTokenList(address, pageToken, pageSize)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Error{
 			Code:    "internal_server_error",
@@ -54,10 +58,20 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 		})
 	}
 
+	// 构建下一页的完整URL
+	var nextPageUrl string
+	if nextPageToken != "" {
+		// 获取当前请求的基本URL
+		baseUrl := fmt.Sprintf("%s://%s%s", c.Protocol(), c.Hostname(), c.Path())
+		nextPageUrl = fmt.Sprintf("%s?pageToken=%s", baseUrl, nextPageToken)
+	}
+
 	// 返回响应
 	return c.JSON(fiber.Map{
-		"address": address,
-		"tokens":  tokens,
+		"address":       address,
+		"tokens":        tokens,
+		"nextPageToken": nextPageToken,
+		"nextPageUrl":   nextPageUrl,
 	})
 }
 
@@ -136,8 +150,12 @@ func (s Server) GetApiUserAddressBalance(c *fiber.Ctx, address string, params ap
 	// 获取代币余额
 	includeZeroBalance := c.Query("includeZeroBalance") == "true"
 
+	// 获取分页参数
+	pageToken := c.Query("pageToken", "")
+	pageSize := 10 // 默认每页10个
+
 	// 调用服务获取代币信息
-	tokens, err := s.ankrService.GetTokens(address, includeZeroBalance)
+	tokens, nextPageToken, err := s.ankrService.GetTokens(address, includeZeroBalance, pageToken, pageSize)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Error{
 			Code:    "internal_server_error",
@@ -145,10 +163,25 @@ func (s Server) GetApiUserAddressBalance(c *fiber.Ctx, address string, params ap
 		})
 	}
 
+	// 构建下一页的完整URL
+	var nextPageUrl string
+	if nextPageToken != "" {
+		// 获取当前请求的基本URL
+		baseUrl := fmt.Sprintf("%s://%s%s", c.Protocol(), c.Hostname(), c.Path())
+		nextPageUrl = fmt.Sprintf("%s?pageToken=%s", baseUrl, nextPageToken)
+
+		// 如果有includeZeroBalance参数，也添加到URL中
+		if includeZeroBalance {
+			nextPageUrl = fmt.Sprintf("%s&includeZeroBalance=true", nextPageUrl)
+		}
+	}
+
 	// 返回响应
 	return c.JSON(fiber.Map{
-		"address": address,
-		"tokens":  tokens, // 直接返回tokens，不再转换为balances
+		"address":       address,
+		"tokens":        tokens,
+		"nextPageToken": nextPageToken,
+		"nextPageUrl":   nextPageUrl,
 	})
 }
 

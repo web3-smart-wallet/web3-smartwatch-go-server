@@ -57,7 +57,7 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 		return nil, "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	fmt.Printf("Sending request to %s with payload: %s\n", s.apiURL, string(jsonData))
+	// fmt.Printf("Sending request to %s with payload: %s\n", s.apiURL, string(jsonData))
 
 	client := &http.Client{
 		Timeout: 30 * time.Second, // 设置超时时间
@@ -80,7 +80,7 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 		return nil, "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	fmt.Printf("Response from Ankr API: %s\n", string(respBody))
+	// fmt.Printf("Response from Ankr API: %s\n", string(respBody))
 
 	// 解析响应
 	var response struct {
@@ -129,7 +129,7 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 			continue
 		}
 
-		fmt.Printf("Found NFT: %s (Type: %s, TokenId: %s)\n", asset.Name, asset.ContractType, asset.TokenId)
+		// fmt.Printf("Found NFT: %s (Type: %s, TokenId: %s)\n", asset.Name, asset.ContractType, asset.TokenId)
 
 		// 处理traits
 		attributes := make([]api.Attribute, 0)
@@ -140,21 +140,48 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 			})
 		}
 
+		// 辅助函数：将字符串转换为指针
+		strPtr := func(s string) *string {
+			return &s
+		}
+
+		// 转换为 NFTTrait 类型
+		nftTraits := make([]api.NFTTrait, len(attributes))
+		for i, attr := range attributes {
+			// 尝试将 Value 转换为字符串
+			var valuePtr *string
+			if strValue, ok := attr.Value.(string); ok {
+				valuePtr = strPtr(strValue)
+			} else {
+				// 如果不是字符串，转换为 JSON 字符串
+				jsonValue, _ := json.Marshal(attr.Value)
+				strValue := string(jsonValue)
+				valuePtr = &strValue
+			}
+
+			nftTraits[i] = api.NFTTrait{
+				TraitType: strPtr(attr.TraitType),
+				Value:     valuePtr,
+			}
+		}
+
+		nftType := api.NFTType(asset.ContractType)
+
 		nft := api.NFT{
-			ContractAddress: asset.ContractAddress,
-			TokenId:         asset.TokenId,
-			Type:            asset.ContractType,
-			Name:            asset.Name,
-			Description:     "", // 响应中没有description字段
-			Image:           asset.ImageUrl,
-			Attributes:      attributes,
-			Collection:      asset.CollectionName,
-			TokenUri:        asset.TokenUrl,
+			ContractAddress: strPtr(asset.ContractAddress),
+			TokenId:         strPtr(asset.TokenId),
+			Type:            &nftType,
+			Name:            strPtr(asset.Name),
+			Description:     strPtr(""), // 响应中没有description字段
+			Image:           strPtr(asset.ImageUrl),
+			Attributes:      &nftTraits,
+			Collection:      strPtr(asset.CollectionName),
+			TokenUri:        strPtr(asset.TokenUrl),
 		}
 
 		nfts = append(nfts, nft)
 	}
 
-	fmt.Printf("Returning %d NFTs for address %s\n", len(nfts), address)
+	// fmt.Printf("Returning %d NFTs for address %s\n", len(nfts), address)
 	return nfts, response.Result.NextPageToken, nil
 }

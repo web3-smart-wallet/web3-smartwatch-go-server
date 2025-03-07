@@ -14,8 +14,8 @@ type AnkrService struct {
 }
 
 type AnkrServiceInterface interface {
-	GetTokens(address string, includeZeroBalance bool) ([]api.Token, error)
-	GetTokenList(address string) ([]api.Token, error)
+	GetTokens(address string, includeZeroBalance bool, pageToken string, pageSize int) ([]api.Token, string, error)
+	GetTokenList(address string, pageToken string, pageSize int) ([]api.Token, string, error)
 }
 
 func NewAnkrService(apiURL string) AnkrServiceInterface {
@@ -24,35 +24,48 @@ func NewAnkrService(apiURL string) AnkrServiceInterface {
 	}
 }
 
-func (s *AnkrService) GetTokens(address string, includeZeroBalance bool) ([]api.Token, error) {
+func (s *AnkrService) GetTokens(address string, includeZeroBalance bool, pageToken string, pageSize int) ([]api.Token, string, error) {
 	// 构建请求体
+	params := map[string]interface{}{
+		"blockchain":      "base",
+		"walletAddress":   address,
+		"onlyWhitelisted": false,
+	}
+
+	// 添加分页参数
+	if pageSize > 0 {
+		params["pageSize"] = pageSize
+	} else {
+		params["pageSize"] = 10 // 默认每页10个
+	}
+
+	if pageToken != "" {
+		params["pageToken"] = pageToken
+	}
+
 	payload := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"method":  "ankr_getAccountBalance",
-		"params": map[string]interface{}{
-			"blockchain":      "base",
-			"walletAddress":   address,
-			"onlyWhitelisted": false,
-		},
-		"id": 1,
+		"params":  params,
+		"id":      1,
 	}
 
 	// 发送请求
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %v", err)
+		return nil, "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", s.apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return nil, "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch tokens: %v", err)
+		return nil, "", fmt.Errorf("failed to fetch tokens: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -69,6 +82,7 @@ func (s *AnkrService) GetTokens(address string, includeZeroBalance bool) ([]api.
 				TokenPrice  string `json:"tokenPrice,omitempty"`
 				TokenType   string `json:"tokenType"`
 			} `json:"assets"`
+			NextPageToken string `json:"nextPageToken"`
 		} `json:"result"`
 		Error *struct {
 			Code    int    `json:"code"`
@@ -77,11 +91,11 @@ func (s *AnkrService) GetTokens(address string, includeZeroBalance bool) ([]api.
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+		return nil, "", fmt.Errorf("failed to decode response: %v", err)
 	}
 
 	if response.Error != nil && response.Error.Message != "" {
-		return nil, fmt.Errorf("ankr api error: %s", response.Error.Message)
+		return nil, "", fmt.Errorf("ankr api error: %s", response.Error.Message)
 	}
 
 	// 转换为 API 响应格式
@@ -99,49 +113,64 @@ func (s *AnkrService) GetTokens(address string, includeZeroBalance bool) ([]api.
 
 		// 创建Token对象，包含所需字段
 		token := api.Token{
-			Address:  asset.Address,
-			Symbol:   asset.TokenSymbol,
-			Name:     asset.TokenName,
-			Decimals: asset.Decimals,
-			Type:     &tokenType,
-			Balance:  &asset.Balance,
+			Address:    asset.Address,
+			Name:       asset.TokenName,
+			Symbol:     asset.TokenSymbol,
+			Type:       &tokenType,
+			Balance:    &asset.Balance,
+			Decimals:   &asset.Decimals,
+			TokenPrice: &asset.TokenPrice,
+			BalanceUsd: &asset.BalanceUsd,
 		}
 
 		tokens = append(tokens, token)
 	}
 
-	return tokens, nil
+	return tokens, response.Result.NextPageToken, nil
 }
 
-func (s *AnkrService) GetTokenList(address string) ([]api.Token, error) {
+func (s *AnkrService) GetTokenList(address string, pageToken string, pageSize int) ([]api.Token, string, error) {
 	// 构建请求体
+	params := map[string]interface{}{
+		"blockchain":      "base",
+		"walletAddress":   address,
+		"onlyWhitelisted": false,
+	}
+
+	// 添加分页参数
+	if pageSize > 0 {
+		params["pageSize"] = pageSize
+	} else {
+		params["pageSize"] = 10 // 默认每页10个
+	}
+
+	if pageToken != "" {
+		params["pageToken"] = pageToken
+	}
+
 	payload := map[string]interface{}{
 		"jsonrpc": "2.0",
 		"method":  "ankr_getAccountBalance",
-		"params": map[string]interface{}{
-			"blockchain":      "base",
-			"walletAddress":   address,
-			"onlyWhitelisted": false,
-		},
-		"id": 1,
+		"params":  params,
+		"id":      1,
 	}
 
 	// 发送请求
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %v", err)
+		return nil, "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", s.apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		return nil, "", fmt.Errorf("failed to create request: %v", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch tokens: %v", err)
+		return nil, "", fmt.Errorf("failed to fetch tokens: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -160,6 +189,7 @@ func (s *AnkrService) GetTokenList(address string) ([]api.Token, error) {
 				Thumbnail   string `json:"thumbnail,omitempty"`
 				IsVerified  bool   `json:"isVerified,omitempty"`
 			} `json:"assets"`
+			NextPageToken string `json:"nextPageToken"`
 		} `json:"result"`
 		Error *struct {
 			Code    int    `json:"code"`
@@ -168,11 +198,11 @@ func (s *AnkrService) GetTokenList(address string) ([]api.Token, error) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
+		return nil, "", fmt.Errorf("failed to decode response: %v", err)
 	}
 
 	if response.Error != nil && response.Error.Message != "" {
-		return nil, fmt.Errorf("ankr api error: %s", response.Error.Message)
+		return nil, "", fmt.Errorf("ankr api error: %s", response.Error.Message)
 	}
 
 	// 转换为 API 响应格式
@@ -184,20 +214,14 @@ func (s *AnkrService) GetTokenList(address string) ([]api.Token, error) {
 		}
 
 		token := api.Token{
-			Address:  asset.Address,
-			Symbol:   asset.TokenSymbol,
-			Name:     asset.TokenName,
-			Decimals: asset.Decimals,
-			Type:     &tokenType,
-		}
-
-		// 如果有余额信息，添加到Token中
-		if asset.Balance != "" {
-			token.Balance = &asset.Balance
+			Address: asset.Address,
+			Name:    asset.TokenName,
+			Symbol:  asset.TokenSymbol,
+			Type:    &tokenType,
 		}
 
 		tokens[i] = token
 	}
 
-	return tokens, nil
+	return tokens, response.Result.NextPageToken, nil
 }
