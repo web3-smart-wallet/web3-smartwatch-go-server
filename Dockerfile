@@ -30,9 +30,6 @@ WORKDIR /app
 # 从builder阶段复制编译好的二进制文件
 COPY --from=builder /app/main .
 
-# 仅当.env文件存在时才复制
-COPY --from=builder /app/.env* ./ 2>/dev/null || true
-
 # 暴露端口（根据您的应用需要修改端口号）
 EXPOSE 8080
 
