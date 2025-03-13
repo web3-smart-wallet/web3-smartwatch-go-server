@@ -13,6 +13,9 @@ RUN go mod download
 # 复制源代码
 COPY . .
 
+# 运行go generate
+RUN go generate ./...
+
 # 构建应用
 RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
