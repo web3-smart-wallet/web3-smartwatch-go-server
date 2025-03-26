@@ -41,6 +41,9 @@ func main() {
 	// 添加 CORS 中间件
 	app.Use(cors.New())
 
+	// Register health check routes
+	api.RegisterHealthRoutes(app)
+
 	ankrURL := fmt.Sprintf("https://rpc.ankr.com/multichain/%s", os.Getenv("ANKR_API_KEY"))
 	ankrService := services.NewAnkrService(ankrURL)
 	nftService := services.NewNFTService()

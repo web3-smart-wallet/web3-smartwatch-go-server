@@ -26,6 +26,12 @@ func NewServer(ankrService services.AnkrServiceInterface, nftService services.NF
 	}
 }
 
+func (s Server) GetHealth(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"status": "OK",
+	})
+}
+
 func (s Server) GetApiSearchAddressAddress(c *fiber.Ctx, address string) error {
 	//TODO implement me
 	panic("implement me")

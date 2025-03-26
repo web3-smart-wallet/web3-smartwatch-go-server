@@ -14,6 +14,25 @@ servers:
     description: Production server
 
 paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check server health
+      description: |
+        Returns a simple "OK" message if the server is running
+      responses:
+        '200':
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                type: object  
+                properties:
+                  status:
+                    type: string
+                    description: Status of the server
+                    example: "OK"
   /api/user/{address}:
     get:
       tags:
