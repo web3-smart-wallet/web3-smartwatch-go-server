@@ -2,18 +2,19 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: web3-smartwatch-ingress
+  namespace: web3-smartwatch
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    spec.ingressClassName: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
   tls:
   - hosts:
-    - api.web3smartwatch.com
+    - api.smartwatch.bardplus.dev
     secretName: web3-smartwatch-tls
   rules:
-  - host: api.web3smartwatch.com
+  - host: api.smartwatch.bardplus.dev
     http:
       paths:
       - path: /

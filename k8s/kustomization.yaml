@@ -13,9 +13,6 @@ resources:
   # secrets.yaml is not included here as it contains sensitive information
   # and should be applied separately
 
-patchesStrategicMerge: []
-  # Add any patches here if needed
-
 commonLabels:
   app.kubernetes.io/name: web3-smartwatch
   app.kubernetes.io/instance: prod 
