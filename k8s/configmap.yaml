@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web3-smartwatch-config
+  namespace: web3-smartwatch
+data:
+  # Add any non-sensitive configuration here
+  SERVER_TIMEOUTS: "30s"
+  MAX_CONNECTIONS: "100" 
