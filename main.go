@@ -44,6 +44,9 @@ func main() {
 	// Register health check routes
 	api.RegisterHealthRoutes(app)
 
+	// Register documentation routes
+	api.RegisterDocsRoutes(app)
+
 	ankrURL := fmt.Sprintf("https://rpc.ankr.com/multichain/%s", os.Getenv("ANKR_API_KEY"))
 	ankrService := services.NewAnkrService(ankrURL)
 	nftService := services.NewNFTService()

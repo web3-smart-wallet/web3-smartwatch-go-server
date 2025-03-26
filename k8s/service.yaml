@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: web3-smartwatch-server
+  namespace: web3-smartwatch
   labels:
     app: web3-smartwatch-server
 spec:
