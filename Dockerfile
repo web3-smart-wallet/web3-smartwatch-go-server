@@ -29,6 +29,7 @@ WORKDIR /app
 
 # 从builder阶段复制编译好的二进制文件
 COPY --from=builder /app/main .
+COPY --from=builder /app/apispec.yaml .
 
 # 暴露端口（根据您的应用需要修改端口号）
 EXPOSE 8080

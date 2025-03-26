@@ -4,23 +4,21 @@ metadata:
   name: web3-smartwatch-ingress
   namespace: web3-smartwatch
   annotations:
-    spec.ingressClassName: "nginx"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  ingressClassName: nginx
   tls:
-  - hosts:
-    - api.smartwatch.bardplus.dev
-    secretName: web3-smartwatch-tls
+    - hosts:
+        - api.smartwatch.bardplus.dev
+      secretName: web3-smartwatch-tls
   rules:
-  - host: api.smartwatch.bardplus.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web3-smartwatch-server
-            port:
-              number: 80 
+    - host: api.smartwatch.bardplus.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web3-smartwatch-server
+                port:
+                  number: 80 
