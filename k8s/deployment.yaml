@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: web3-smartwatch-server
-        image: ghcr.io/web3-smart-wallet/web3-smartwatch-go-server:v1.0.0
+        image: ghcr.io/web3-smart-wallet/web3-smartwatch-go-server:v1.0.1
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
