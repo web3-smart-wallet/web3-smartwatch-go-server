@@ -63,6 +63,7 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 		Timeout: 30 * time.Second, // 设置超时时间
 	}
 	req, err := http.NewRequest("POST", s.apiURL, bytes.NewBuffer(jsonData))
+	fmt.Printf("%s\n", s.apiURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request: %v", err)
 	}
