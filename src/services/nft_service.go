@@ -77,10 +77,21 @@ func (s *NFTService) GetNFTs(address string, includeMetadata bool, pageToken str
 	// 读取响应体
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Printf("Error reading response body: %v\n", err)
 		return nil, "", fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// fmt.Printf("Response from Ankr API: %s\n", string(respBody))
+	// 只在非200响应时打印详细信息
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("=== Non-200 Response ===\n")
+		fmt.Printf("Status Code: %d\n", resp.StatusCode)
+		fmt.Printf("Response Headers:\n")
+		for key, values := range resp.Header {
+			fmt.Printf("  %s: %v\n", key, values)
+		}
+		fmt.Printf("Raw Response Body:\n%s\n", string(respBody))
+		fmt.Println("=== End Response ===")
+	}
 
 	// 解析响应
 	var response struct {

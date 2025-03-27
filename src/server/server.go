@@ -82,14 +82,6 @@ func (s Server) GetApiUserAddress(c *fiber.Ctx, address string, params api.GetAp
 }
 
 func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.GetApiUserAddressNftsParams) error {
-	// 记录完整的请求头
-	fmt.Println("请求头信息:")
-	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
-		fmt.Printf("%s: %s\n", string(key), string(value))
-		headers[string(key)] = string(value)
-	})
-
 	// 验证地址格式
 	if !addressRegex.MatchString(address) {
 		return c.Status(fiber.StatusBadRequest).JSON(api.Error{
@@ -113,6 +105,28 @@ func (s Server) GetApiUserAddressNfts(c *fiber.Ctx, address string, params api.G
 
 	nfts, nextPageToken, err := s.nftService.GetNFTs(address, includeMetadata, pageToken)
 	if err != nil {
+		// 只在错误时打印请求信息
+		fmt.Println("=== Request Headers ===")
+		headers := make(map[string]string)
+		c.Request().Header.VisitAll(func(key, value []byte) {
+			fmt.Printf("%s: %s\n", string(key), string(value))
+			headers[string(key)] = string(value)
+		})
+		fmt.Println("=== End Request Headers ===")
+
+		fmt.Println("=== Full Request Info ===")
+		fmt.Printf("Method: %s\n", c.Method())
+		fmt.Printf("Path: %s\n", c.Path())
+		fmt.Printf("Query Parameters:\n")
+		c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
+			fmt.Printf("  %s: %s\n", string(key), string(value))
+		})
+		fmt.Printf("Address Parameter: %s\n", address)
+		if params.IncludeMetadata != nil {
+			fmt.Printf("Include Metadata: %v\n", *params.IncludeMetadata)
+		}
+		fmt.Println("=== End Request Info ===")
+
 		fmt.Printf("Error fetching NFTs: %v\n", err)
 		return c.Status(fiber.StatusInternalServerError).JSON(api.Error{
 			Code:    "internal_server_error",
